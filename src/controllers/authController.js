@@ -7,29 +7,75 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secrettoken';
 export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
+    // Validação básica dos campos
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+    }
+
     const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(401).json({ message: 'Credenciais inválidas' });
+    if (!user) {
+      return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ message: 'Credenciais inválidas' });
+    // Usar o método checkPassword do modelo ou comparar com password_hash
+    const valid = user.checkPassword ? 
+      user.checkPassword(password) : 
+      await bcrypt.compare(password, user.password_hash);
+    
+    if (!valid) {
+      return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1d' });
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+    // Usar uuid como id, já que é a chave primária
+    const token = jwt.sign({ 
+      id: user.uuid, 
+      email: user.email, 
+      role: user.role 
+    }, JWT_SECRET, { expiresIn: '1d' });
+    
+    res.json({ 
+      token, 
+      user: { 
+        id: user.uuid, 
+        email: user.email, 
+        name: user.name,
+        role: user.role
+      } 
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Erro no servidor' });
+    console.error('Erro no login:', err);
+    res.status(500).json({ message: 'Erro no servidor', error: err.message });
   }
 };
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
   try {
-    const exists = await User.findOne({ where: { email } });
-    if (exists) return res.status(400).json({ message: 'Email já cadastrado' });
+    // Validação básica dos campos
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Nome, email e senha são obrigatórios' });
+    }
 
-    const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hash });
-    res.status(201).json({ id: user.id, email: user.email, name: user.name });
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Senha deve ter pelo menos 6 caracteres' });
+    }
+
+    const exists = await User.findOne({ where: { email } });
+    if (exists) {
+      return res.status(400).json({ message: 'Email já cadastrado' });
+    }
+
+    // Criar usuário - o hook beforeSave vai cuidar do hash da senha
+    const user = await User.create({ name, email, password });
+    
+    res.status(201).json({ 
+      id: user.uuid, 
+      email: user.email, 
+      name: user.name,
+      role: user.role
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Erro no servidor' });
+    console.error('Erro no registro:', err);
+    res.status(500).json({ message: 'Erro no servidor', error: err.message });
   }
 };
