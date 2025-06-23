@@ -7,12 +7,12 @@ const router = Router();
 router.use(authMiddleware);
 
 // CLIENT abre chamado
-router.post('/',  allow(['client']), authMiddleware, TicketController.create);
+router.post('/', allow(['client']), TicketController.create);
 
 // Todos autenticados podem listar (filtragem dentro do controller)
-router.get('/', authMiddleware,  TicketController.index);
+router.get('/', TicketController.index);
 
 // SUPORTE altera status
-router.patch('/:id/status', allow(['support']),authMiddleware, TicketController.updateStatus);
+router.patch('/:id/status', allow(['support']), TicketController.updateStatus);
 
 export default router;

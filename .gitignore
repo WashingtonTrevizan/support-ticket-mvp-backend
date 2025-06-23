@@ -34,3 +34,6 @@ docker-compose.override.yml
 # Optional: coverage or build output
 coverage/
 dist/
+
+# API Testing documentation
+API_TESTING.md
