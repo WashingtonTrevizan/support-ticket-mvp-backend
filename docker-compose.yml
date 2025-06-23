@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: ${DB_NAME}
     env_file: .env  # Arquivo separado para credenciais
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
