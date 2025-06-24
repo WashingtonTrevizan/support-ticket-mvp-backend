@@ -16,4 +16,5 @@ User.init({
 }, { hooks: {
   beforeSave: async user => { if (user.password) user.password_hash = await bcrypt.hash(user.password, 10); },
 }, sequelize, modelName: 'user' });
-User.belongsTo(Company); Company.hasMany(User);
+User.belongsTo(Company, { foreignKey: 'CompanyUuid' }); 
+Company.hasMany(User, { foreignKey: 'CompanyUuid' });

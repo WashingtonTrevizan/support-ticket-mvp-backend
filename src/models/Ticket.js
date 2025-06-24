@@ -11,5 +11,6 @@ Ticket.init({
   priority:    { type: DataTypes.ENUM('low', 'medium', 'high'), defaultValue: 'medium' },
   status:      { type: DataTypes.ENUM('open', 'in_progress', 'closed'), defaultValue: 'open' },
 }, { sequelize, modelName: 'ticket' });
-Ticket.belongsTo(User,   { as: 'creator' });
-Ticket.belongsTo(Company); Company.hasMany(Ticket);
+Ticket.belongsTo(User, { as: 'creator', foreignKey: 'UserUuid' });
+Ticket.belongsTo(Company, { foreignKey: 'CompanyUuid' }); 
+Company.hasMany(Ticket, { foreignKey: 'CompanyUuid' });

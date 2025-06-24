@@ -7,14 +7,13 @@ const authMiddleware = (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'Token inválido' });
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     req.userId = decoded.id;
     req.userRole = decoded.role;
     req.userEmail = decoded.email;
-    // Se necessário, você pode buscar mais dados do usuário aqui
+    req.companyId = decoded.companyId; // Incluir companyId do token
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Token inválido ou expirado' });

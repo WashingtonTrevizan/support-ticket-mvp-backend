@@ -24,13 +24,12 @@ export const login = async (req, res) => {
     
     if (!valid) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
-    }
-
-    // Usar uuid como id, já que é a chave primária
+    }    // Usar uuid como id, já que é a chave primária
     const token = jwt.sign({ 
       id: user.uuid, 
       email: user.email, 
-      role: user.role 
+      role: user.role,
+      companyId: user.CompanyUuid // Incluir companyId no token
     }, JWT_SECRET, { expiresIn: '1d' });
     
     res.json({ 
@@ -39,7 +38,8 @@ export const login = async (req, res) => {
         id: user.uuid, 
         email: user.email, 
         name: user.name,
-        role: user.role
+        role: user.role,
+        companyId: user.CompanyUuid
       } 
     });
   } catch (err) {

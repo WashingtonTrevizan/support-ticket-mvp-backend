@@ -15,6 +15,10 @@ module.exports = {
       description: {
         type: Sequelize.TEXT,
       },
+      priority: {
+        type: Sequelize.ENUM('low', 'medium', 'high'),
+        defaultValue: 'medium',
+      },
       status: {
         type: Sequelize.ENUM('open', 'in_progress', 'closed'),
         defaultValue: 'open',

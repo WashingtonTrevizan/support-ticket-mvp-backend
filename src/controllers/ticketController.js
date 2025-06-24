@@ -13,14 +13,12 @@ export const create = async (req, res) => {
     // Validação básica
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
-    }
-
-    const ticket = await Ticket.create({
+    }    const ticket = await Ticket.create({
       title,
       description,
       priority: priority || 'medium',
-      userId: req.userId,
-      companyId: req.companyId, // Isso pode ser null por enquanto se não tiver company
+      UserUuid: req.userId,
+      CompanyUuid: req.companyId, // Isso pode ser null por enquanto se não tiver company
     });
     
     return res.status(201).json(ticket);
@@ -31,9 +29,8 @@ export const create = async (req, res) => {
 };
 
 // Index ⇒ cliente vê só da empresa, suporte vê todos
-export const index = async (req, res) => {
-  try {
-    const where = req.userRole === 'support' ? {} : { companyId: req.companyId };
+export const index = async (req, res) => {  try {
+    const where = req.userRole === 'support' ? {} : { CompanyUuid: req.companyId };
     const tickets = await Ticket.findAll({ 
       where, 
       order: [['createdAt', 'DESC']],
