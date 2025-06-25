@@ -11,6 +11,15 @@ Ticket.init({
   priority:    { type: DataTypes.ENUM('low', 'medium', 'high'), defaultValue: 'medium' },
   status:      { type: DataTypes.ENUM('open', 'in_progress', 'closed'), defaultValue: 'open' },
 }, { sequelize, modelName: 'ticket' });
+
+// Relacionamentos
 Ticket.belongsTo(User, { as: 'creator', foreignKey: 'UserUuid' });
 Ticket.belongsTo(Company, { foreignKey: 'CompanyUuid' }); 
 Company.hasMany(Ticket, { foreignKey: 'CompanyUuid' });
+
+// Relacionamento com TicketComment - definido após inicialização para evitar dependência circular
+setTimeout(() => {
+  import('./TicketComment.js').then(({ TicketComment }) => {
+    Ticket.hasMany(TicketComment, { foreignKey: 'TicketUuid', as: 'comments' });
+  });
+}, 0);
