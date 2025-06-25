@@ -49,7 +49,7 @@ export const login = async (req, res) => {
 };
 
 export const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
   try {
     // Validação básica dos campos
     if (!name || !email || !password) {
@@ -60,21 +60,30 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'Senha deve ter pelo menos 6 caracteres' });
     }
 
+    // Validar role se fornecido
+    if (role && !['client', 'support'].includes(role)) {
+      return res.status(400).json({ message: 'Role deve ser "client" ou "support"' });
+    }
+
     const exists = await User.findOne({ where: { email } });
     if (exists) {
       return res.status(400).json({ message: 'Email já cadastrado' });
     }
 
     // Criar usuário - o hook beforeSave vai cuidar do hash da senha
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ 
+      name, 
+      email, 
+      password,
+      role: role || 'client' // Default é client se não especificado
+    });
     
     res.status(201).json({ 
       id: user.uuid, 
       email: user.email, 
       name: user.name,
       role: user.role
-    });
-  } catch (err) {
+    });  } catch (err) {
     console.error('Erro no registro:', err);
     res.status(500).json({ message: 'Erro no servidor', error: err.message });
   }
