@@ -1,5 +1,6 @@
 import { Ticket } from '../models/Ticket.js';
 import { User } from '../models/User.js';
+import { TicketComment } from '../models/TicketComment.js';
 
 // Create ⇒ only CLIENTS can abrir chamado
 export const create = async (req, res) => {
@@ -81,43 +82,49 @@ export const show = async (req, res) => {
     const { id } = req.params;
     const { includeComments } = req.query;
     
-    // Configurar includes base
-    const includeOptions = [
-      {
-        model: User,
-        as: 'creator',
-        attributes: ['uuid', 'name', 'email']
-      }
-    ];
+    console.log('DEBUG: Searching for ticket ID:', id);
+    console.log('DEBUG: Include comments:', includeComments);
     
-    // Adicionar comentários se solicitado
+    let ticket;
+    
     if (includeComments === 'true') {
-      const { TicketComment } = await import('../models/TicketComment.js');
-      
-      const commentInclude = {
-        model: TicketComment,
-        as: 'comments',
+      console.log('DEBUG: Searching WITH comments...');
+      // Buscar ticket com comentários
+      ticket = await Ticket.findByPk(id, {
+        include: [
+          {
+            model: User,
+            as: 'creator',
+            attributes: ['uuid', 'name', 'email']
+          },
+          {
+            model: TicketComment,
+            as: 'comments',
+            required: false,
+            include: [{
+              model: User,
+              as: 'author',
+              attributes: ['uuid', 'name', 'role']
+            }]
+          }
+        ]
+      });
+      console.log('DEBUG: Ticket with comments found:', !!ticket);
+    } else {
+      console.log('DEBUG: Searching WITHOUT comments...');
+      // Buscar ticket sem comentários
+      ticket = await Ticket.findByPk(id, {
         include: [{
           model: User,
-          as: 'author',
-          attributes: ['uuid', 'name', 'role']
-        }],
-        order: [['createdAt', 'ASC']]
-      };
-      
-      // Cliente não vê comentários internos
-      if (req.userRole === 'client') {
-        commentInclude.where = { isInternal: false };
-      }
-      
-      includeOptions.push(commentInclude);
+          as: 'creator',
+          attributes: ['uuid', 'name', 'email']
+        }]
+      });
+      console.log('DEBUG: Ticket without comments found:', !!ticket);
     }
     
-    const ticket = await Ticket.findByPk(id, {
-      include: includeOptions
-    });
-    
     if (!ticket) {
+      console.log('DEBUG: Ticket NOT FOUND - returning 404');
       return res.status(404).json({ error: 'Ticket not found' });
     }
     
@@ -126,9 +133,21 @@ export const show = async (req, res) => {
       return res.status(403).json({ error: 'You can only view tickets from your company' });
     }
     
+    // Filtrar comentários internos para clientes
+    if (includeComments === 'true' && req.userRole === 'client' && ticket.comments) {
+      ticket.comments = ticket.comments.filter(comment => !comment.isInternal);
+    }
+    
+    // Ordenar comentários por data se existirem
+    if (ticket.comments && ticket.comments.length > 0) {
+      ticket.comments.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    }
+    
+    console.log('DEBUG: Returning ticket successfully');
     return res.json(ticket);
   } catch (error) {
-    console.error('Error fetching ticket:', error);
+    console.error('DEBUG: ERROR in show method:', error.message);
+    console.error('DEBUG: Stack trace:', error.stack);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

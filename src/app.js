@@ -9,8 +9,12 @@ import './models/User.js';
 import './models/Company.js';
 import './models/Ticket.js';
 import './models/TicketComment.js';
+import { initializeAssociations } from './models/associations.js';
 
 dotenv.config();
+
+// Inicializar associações após importar todos os modelos
+initializeAssociations();
 
 const app = express();
 

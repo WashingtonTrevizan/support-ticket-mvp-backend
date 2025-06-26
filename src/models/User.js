@@ -1,7 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import bcrypt from 'bcryptjs';
 import { sequelize } from '../config/database.js';
-import { Company } from './Company.js';
 
 export class User extends Model {
   checkPassword(password) { return bcrypt.compareSync(password, this.password_hash); }
@@ -16,5 +15,3 @@ User.init({
 }, { hooks: {
   beforeSave: async user => { if (user.password) user.password_hash = await bcrypt.hash(user.password, 10); },
 }, sequelize, modelName: 'user' });
-User.belongsTo(Company, { foreignKey: 'CompanyUuid' }); 
-Company.hasMany(User, { foreignKey: 'CompanyUuid' });
