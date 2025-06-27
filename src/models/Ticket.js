@@ -8,4 +8,5 @@ Ticket.init({
   description: { type: DataTypes.TEXT, allowNull: false },
   priority:    { type: DataTypes.ENUM('low', 'medium', 'high'), defaultValue: 'medium' },
   status:      { type: DataTypes.ENUM('open', 'in_progress', 'closed'), defaultValue: 'open' },
+  type:        { type: DataTypes.ENUM('bug', 'suporte_tecnico', 'solicitacao', 'sugestao_implementacao'), defaultValue: 'suporte_tecnico' },
 }, { sequelize, modelName: 'ticket' });

@@ -9,15 +9,23 @@ export const create = async (req, res) => {
       return res.status(403).json({ error: 'Only clients and support can open tickets' });
     }
 
-    const { title, description, priority } = req.body;
+    const { title, description, priority, type } = req.body;
     
     // Validação básica
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
-    }    const ticket = await Ticket.create({
+    }
+    
+    // Validar type se fornecido
+    if (type && !['bug', 'suporte_tecnico', 'solicitacao', 'sugestao_implementacao'].includes(type)) {
+      return res.status(400).json({ error: 'Type must be one of: bug, suporte_tecnico, solicitacao, sugestao_implementacao' });
+    }
+    
+    const ticket = await Ticket.create({
       title,
       description,
       priority: priority || 'medium',
+      type: type || 'suporte_tecnico',
       UserUuid: req.userId,
       CompanyUuid: req.companyId, // Isso pode ser null por enquanto se não tiver company
     });
@@ -32,7 +40,7 @@ export const create = async (req, res) => {
 // Index ⇒ cliente vê só da empresa, suporte vê todos (com filtro opcional por empresa)
 export const index = async (req, res) => {
   try {
-    const { companyId, status, priority, page = 1, limit = 10 } = req.query;
+    const { companyId, status, priority, type, page = 1, limit = 10 } = req.query;
     
     // Converter page e limit para números
     const pageNumber = parseInt(page, 10);
@@ -63,6 +71,9 @@ export const index = async (req, res) => {
       if (priority) {
         where.priority = priority;
       }
+      if (type) {
+        where.type = type;
+      }
     } else {
       // Cliente vê apenas tickets da própria empresa
       where.CompanyUuid = req.companyId;
@@ -73,6 +84,9 @@ export const index = async (req, res) => {
       }
       if (priority) {
         where.priority = priority;
+      }
+      if (type) {
+        where.type = type;
       }
     }
     
@@ -219,7 +233,7 @@ export const updateStatus = async (req, res) => {
 export const update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, priority, status } = req.body;
+    const { title, description, priority, status, type } = req.body;
     
     // Buscar o ticket
     const ticket = await Ticket.findByPk(id);
@@ -277,6 +291,17 @@ export const update = async (req, res) => {
         return res.status(400).json({ error: 'Status must be open, in_progress, or closed' });
       }
       updates.status = status;
+    }
+    
+    // Tipo - Cliente pode editar apenas seus próprios tickets, Suporte pode editar qualquer um
+    if (type !== undefined) {
+      if (req.userRole === 'client' && ticket.UserUuid !== req.userId) {
+        return res.status(403).json({ error: 'Only the ticket creator can update type' });
+      }
+      if (!['bug', 'suporte_tecnico', 'solicitacao', 'sugestao_implementacao'].includes(type)) {
+        return res.status(400).json({ error: 'Type must be one of: bug, suporte_tecnico, solicitacao, sugestao_implementacao' });
+      }
+      updates.type = type;
     }
     
     // Se não há atualizações válidas

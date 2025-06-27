@@ -17,7 +17,7 @@ module.exports = {
         defaultValue: false,
         comment: 'Comentário interno apenas para suporte'
       },
-      ticketUuid: {
+      TicketUuid: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -27,7 +27,7 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      userUuid: {
+      UserUuid: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {

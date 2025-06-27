@@ -1,0 +1,26 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "facil",
+    "database": "support_db",
+    "host": "localhost",
+    "port": "15432",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "facil",
+    "database": "support_db_test",
+    "host": "localhost",
+    "port": "15432",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "postgres",
+    "password": "facil",
+    "database": "support_db_production",
+    "host": "localhost",
+    "port": "15432",
+    "dialect": "postgres"
+  }
+}
