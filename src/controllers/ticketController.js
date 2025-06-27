@@ -179,3 +179,100 @@ export const updateStatus = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// update ⇒ atualizar campos do ticket (com permissões)
+export const update = async (req, res) => {
+  try {
+    console.log('=== DEBUG UPDATE TICKET ===');
+    console.log('Method:', req.method);
+    console.log('Params:', req.params);
+    console.log('Body:', req.body);
+    console.log('User:', { id: req.userId, role: req.userRole, companyId: req.companyId });
+    
+    const { id } = req.params;
+    const { title, description, priority, status } = req.body;
+    
+    console.log('Searching for ticket with ID:', id);
+    
+    // Buscar o ticket
+    const ticket = await Ticket.findByPk(id);
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+    
+    // Verificar permissões: cliente só vê tickets da própria empresa
+    if (req.userRole === 'client' && ticket.CompanyUuid !== req.companyId) {
+      return res.status(403).json({ error: 'You can only update tickets from your company' });
+    }
+    
+    // Validações e permissões por campo
+    const updates = {};
+    
+    // Título - Cliente pode editar apenas seus próprios tickets, Suporte pode editar qualquer um
+    if (title !== undefined) {
+      if (req.userRole === 'client' && ticket.UserUuid !== req.userId) {
+        return res.status(403).json({ error: 'Only the ticket creator can update title' });
+      }
+      if (typeof title !== 'string' || title.trim().length === 0) {
+        return res.status(400).json({ error: 'Title must be a non-empty string' });
+      }
+      updates.title = title.trim();
+    }
+    
+    // Descrição - Cliente pode editar apenas seus próprios tickets, Suporte pode editar qualquer um
+    if (description !== undefined) {
+      if (req.userRole === 'client' && ticket.UserUuid !== req.userId) {
+        return res.status(403).json({ error: 'Only the ticket creator can update description' });
+      }
+      if (typeof description !== 'string' || description.trim().length === 0) {
+        return res.status(400).json({ error: 'Description must be a non-empty string' });
+      }
+      updates.description = description.trim();
+    }
+    
+    // Prioridade - Cliente pode editar apenas seus próprios tickets, Suporte pode editar qualquer um
+    if (priority !== undefined) {
+      if (req.userRole === 'client' && ticket.UserUuid !== req.userId) {
+        return res.status(403).json({ error: 'Only the ticket creator can update priority' });
+      }
+      if (!['low', 'medium', 'high'].includes(priority)) {
+        return res.status(400).json({ error: 'Priority must be low, medium, or high' });
+      }
+      updates.priority = priority;
+    }
+    
+    // Status - Apenas suporte pode alterar status
+    if (status !== undefined) {
+      if (req.userRole !== 'support') {
+        return res.status(403).json({ error: 'Only support can update status' });
+      }
+      if (!['open', 'in_progress', 'closed'].includes(status)) {
+        return res.status(400).json({ error: 'Status must be open, in_progress, or closed' });
+      }
+      updates.status = status;
+    }
+    
+    // Se não há atualizações válidas
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields provided for update' });
+    }
+    
+    // Aplicar atualizações
+    Object.assign(ticket, updates);
+    await ticket.save();
+    
+    // Retornar ticket atualizado com creator
+    const updatedTicket = await Ticket.findByPk(id, {
+      include: [{
+        model: User,
+        as: 'creator',
+        attributes: ['uuid', 'name', 'email']
+      }]
+    });
+    
+    return res.json(updatedTicket);
+  } catch (error) {
+    console.error('Error updating ticket:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
