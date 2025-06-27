@@ -2,11 +2,11 @@ import { Ticket } from '../models/Ticket.js';
 import { User } from '../models/User.js';
 import { TicketComment } from '../models/TicketComment.js';
 
-// Create ⇒ only CLIENTS can abrir chamado
+// Create ⇒ CLIENTS and SUPPORT can abrir chamado
 export const create = async (req, res) => {
   try {
-    if (req.userRole !== 'client') {
-      return res.status(403).json({ error: 'Only clients can open tickets' });
+    if (!['client', 'support'].includes(req.userRole)) {
+      return res.status(403).json({ error: 'Only clients and support can open tickets' });
     }
 
     const { title, description, priority } = req.body;

@@ -6,8 +6,8 @@ import { allow } from '../middlewares/roleMiddleware.js';
 const router = Router();
 router.use(authMiddleware);
 
-// CLIENT abre chamado
-router.post('/', allow(['client']), TicketController.create);
+// CLIENT e SUPPORT podem abrir chamado
+router.post('/', allow(['client', 'support']), TicketController.create);
 
 // Todos autenticados podem listar (filtragem dentro do controller)
 router.get('/', TicketController.index);
