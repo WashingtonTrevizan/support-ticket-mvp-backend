@@ -30,8 +30,24 @@ export const create = async (req, res) => {
 };
 
 // Index ⇒ cliente vê só da empresa, suporte vê todos (com filtro opcional por empresa)
-export const index = async (req, res) => {  try {
-    const { companyId, status, priority } = req.query;
+export const index = async (req, res) => {
+  try {
+    const { companyId, status, priority, page = 1, limit = 10 } = req.query;
+    
+    // Converter page e limit para números
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    
+    // Validação de paginação
+    if (pageNumber < 1) {
+      return res.status(400).json({ error: 'Page must be greater than 0' });
+    }
+    if (limitNumber < 1 || limitNumber > 100) {
+      return res.status(400).json({ error: 'Limit must be between 1 and 100' });
+    }
+    
+    // Calcular offset
+    const offset = (pageNumber - 1) * limitNumber;
     
     let where = {};
     
@@ -60,16 +76,35 @@ export const index = async (req, res) => {  try {
       }
     }
     
-    const tickets = await Ticket.findAll({ 
+    // Buscar tickets com paginação
+    const { count, rows: tickets } = await Ticket.findAndCountAll({ 
       where, 
       order: [['createdAt', 'DESC']],
+      limit: limitNumber,
+      offset: offset,
       include: [{
         model: User,
         as: 'creator',
         attributes: ['uuid', 'name', 'email']
       }]
     });
-    return res.json(tickets);
+    
+    // Calcular informações de paginação
+    const totalPages = Math.ceil(count / limitNumber);
+    const hasNextPage = pageNumber < totalPages;
+    const hasPreviousPage = pageNumber > 1;
+    
+    return res.json({
+      tickets,
+      pagination: {
+        currentPage: pageNumber,
+        totalPages,
+        totalItems: count,
+        itemsPerPage: limitNumber,
+        hasNextPage,
+        hasPreviousPage
+      }
+    });
   } catch (error) {
     console.error('Error fetching tickets:', error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -183,16 +218,8 @@ export const updateStatus = async (req, res) => {
 // update ⇒ atualizar campos do ticket (com permissões)
 export const update = async (req, res) => {
   try {
-    console.log('=== DEBUG UPDATE TICKET ===');
-    console.log('Method:', req.method);
-    console.log('Params:', req.params);
-    console.log('Body:', req.body);
-    console.log('User:', { id: req.userId, role: req.userRole, companyId: req.companyId });
-    
     const { id } = req.params;
     const { title, description, priority, status } = req.body;
-    
-    console.log('Searching for ticket with ID:', id);
     
     // Buscar o ticket
     const ticket = await Ticket.findByPk(id);
