@@ -48,8 +48,8 @@ module.exports = {
     });
 
     // Índices para melhor performance
-    await queryInterface.addIndex('ticket_comments', ['ticketUuid']);
-    await queryInterface.addIndex('ticket_comments', ['userUuid']);
+    await queryInterface.addIndex('ticket_comments', ['TicketUuid']);
+    await queryInterface.addIndex('ticket_comments', ['UserUuid']);
     await queryInterface.addIndex('ticket_comments', ['createdAt']);
   },
   

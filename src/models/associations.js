@@ -12,6 +12,7 @@ export function initializeAssociations() {
 
   // Ticket associations
   Ticket.belongsTo(User, { as: 'creator', foreignKey: 'UserUuid' });
+  Ticket.belongsTo(User, { as: 'assignedTo', foreignKey: 'assignedToUuid' });
   Ticket.belongsTo(Company, { foreignKey: 'CompanyUuid' });
   Company.hasMany(Ticket, { foreignKey: 'CompanyUuid' });
 
